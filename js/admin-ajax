@@ -1,0 +1,56 @@
+jQuery(document).ready(function ($) {
+    console.log('admin-ajax.js yüklendi'); // Hata ayıklama için
+    console.log('nefret_admin_ajax:', nefret_admin_ajax); // Objenin tanımlı olduğunu kontrol et
+
+    $('#etiketler').on('input', function () {
+        var term = $(this).val().split(',').pop().trim();
+        console.log('Aranan terim:', term); // Hata ayıklama için
+
+        if (term.length < 2) {
+            $('#etiket-onerileri').hide();
+            return;
+        }
+
+        $.ajax({
+            url: nefret_admin_ajax.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'nefret_etiket_ara',
+                nonce: nefret_admin_ajax.nonce,
+                term: term
+            },
+            success: function (response) {
+                console.log('AJAX yanıtı:', response); // Hata ayıklama için
+                if (response.success && response.data.length) {
+                    var suggestions = response.data.map(function (tag) {
+                        return '<div class="etiket-oneri" data-tag="' + tag + '">' + tag + '</div>';
+                    }).join('');
+                    $('#etiket-onerileri').html(suggestions).show();
+                } else {
+                    $('#etiket-onerileri').hide();
+                }
+            },
+            error: function (xhr, status, error) {
+                console.log('AJAX hatası:', status, error); // Hata ayıklama için
+            }
+        });
+    });
+
+    // Öneri tıklama
+    $(document).on('click', '.etiket-oneri', function () {
+        var tag = $(this).data('tag');
+        var current = $('#etiketler').val();
+        var tags = current.split(',').filter(function (t) { return t.trim(); });
+        tags.pop(); // Son yarım yazılanı kaldır
+        tags.push(tag);
+        $('#etiketler').val(tags.join(', ') + ', ');
+        $('#etiket-onerileri').hide();
+    });
+
+    // Önerileri gizle
+    $(document).click(function (e) {
+        if (!$(e.target).closest('#etiketler, #etiket-onerileri').length) {
+            $('#etiket-onerileri').hide();
+        }
+    });
+});
